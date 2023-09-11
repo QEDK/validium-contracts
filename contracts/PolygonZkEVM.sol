@@ -6,7 +6,7 @@ import "./interfaces/IVerifierRollup.sol";
 import "./interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IPolygonZkEVMBridge.sol";
-import "./lib/DAMerkle.sol";
+import "./lib/DARouterVerification.sol";
 import "./lib/EmergencyManager.sol";
 import "./interfaces/IPolygonZkEVMErrors.sol";
 
@@ -20,7 +20,7 @@ import "./interfaces/IPolygonZkEVMErrors.sol";
  */
 contract PolygonZkEVM is
     OwnableUpgradeable,
-    DAMerkle,
+    DARouterVerification,
     EmergencyManager,
     IPolygonZkEVMErrors
 {
@@ -375,7 +375,7 @@ contract PolygonZkEVM is
         IPolygonZkEVMBridge _bridgeAddress,
         uint64 _chainID,
         uint64 _forkID
-    ) DAMerkle(_dataAvailabilityRouter) {
+    ) DARouterVerification(_dataAvailabilityRouter) {
         globalExitRootManager = _globalExitRootManager;
         matic = _matic;
         rollupVerifier = _rollupVerifier;
@@ -490,9 +490,7 @@ contract PolygonZkEVM is
 
         // this is slightly inefficient but avoids stack too deep and opening the batch unless the batch is attested
         for (uint256 i = 0; i < batchesNum; i++) {
-            if (!_checkDataRootMembership(daData[i].blockNumber, daData[i].proof, daData[i].width, daData[i].index, batches[i].batchHash)) {
-                revert InvalidDAProof();
-            }
+            _checkDataRootMembership(daData[i].blockNumber, daData[i].proof, daData[i].width, daData[i].index, batches[i].batchHash);
         }
 
         // Store storage variables in memory, to save gas, because will be overrided multiple times
@@ -1028,9 +1026,7 @@ contract PolygonZkEVM is
         // Update forcedBatches mapping
         lastForceBatch++;
 
-        if (!_checkDataRootMembership(daData.blockNumber, daData.proof, daData.width, daData.index, batchHash)) {
-            revert InvalidDAProof();
-        }
+        _checkDataRootMembership(daData.blockNumber, daData.proof, daData.width, daData.index, batchHash);
 
         forcedBatches[lastForceBatch] = keccak256(
             abi.encodePacked(
@@ -1095,9 +1091,7 @@ contract PolygonZkEVM is
             // Store the current transactions hash since it's used more than once for gas saving
             bytes32 currentTransactionsHash = currentBatch.batchHash;
 
-            if (!_checkDataRootMembership(daData[i].blockNumber, daData[i].proof, daData[i].width, daData[i].index, currentBatch.batchHash)) {
-                revert InvalidDAProof();
-            }
+            _checkDataRootMembership(daData[i].blockNumber, daData[i].proof, daData[i].width, daData[i].index, currentBatch.batchHash);
 
             // Check forced data matches
             bytes32 hashedForcedBatchData = keccak256(

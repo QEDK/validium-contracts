@@ -208,9 +208,4 @@ interface IPolygonZkEVMErrors {
      * @dev Thrown when try to activate force batches when they are already active
      */
     error ForceBatchesAlreadyActive();
-
-    /**
-     * @dev Thrown when the DA bridge cannot find the corresponding data
-     */
-    error InvalidDAProof();
 }

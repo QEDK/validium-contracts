@@ -2,32 +2,14 @@
 // Modified from https://github.com/QEDK/solidity-misc/blob/master/contracts/Merkle.sol
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "../interfaces/IDataAvailabilityRouter.sol";
-
-contract DAMerkle is OwnableUpgradeable {
-    IDataAvailabilityRouter public router;
-
-    constructor(IDataAvailabilityRouter _router) {
-        router = _router;
-    }
-
-    function setRouter(
-        IDataAvailabilityRouter _router
-    ) public virtual onlyOwner {
-        router = _router;
-    }
-
-    function _checkDataRootMembership(
-        uint32 blockNumber,
+library Merkle {
+    function checkMembership(
+        bytes32 leaf,
+        bytes32 root,
         bytes32[] calldata proof,
         uint256 width, // number of leaves
-        uint256 index,
-        bytes32 leaf
-    ) internal view virtual returns (bool isMember) {
-        bytes32 rootHash = router.roots(blockNumber);
-        // if root hash is 0, block does not have a root (yet)
-        require(rootHash != bytes32(0), "INVALID_ROOT");
+        uint256 index
+    ) internal pure returns (bool isMember) {
         assembly ("memory-safe") {
             if proof.length {
                 let end := add(proof.offset, shl(5, proof.length))
@@ -51,7 +33,7 @@ contract DAMerkle is OwnableUpgradeable {
             }
             // checks if the calculated root matches the expected root
             // then, check if index was zeroed while calculating proof, else an invalid index was provided
-            isMember := and(eq(leaf, rootHash), iszero(index))
+            isMember := and(eq(leaf, root), iszero(index))
         }
     }
 }
