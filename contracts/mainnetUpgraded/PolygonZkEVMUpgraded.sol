@@ -26,6 +26,7 @@ contract PolygonZkEVMUpgraded is PolygonZkEVM {
      */
     constructor(
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
+        IDataAvailabilityRouter _dataAvailabilityRouter,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress,
@@ -35,6 +36,7 @@ contract PolygonZkEVMUpgraded is PolygonZkEVM {
     )
         PolygonZkEVM(
             _globalExitRootManager,
+            _dataAvailabilityRouter,
             _matic,
             _rollupVerifier,
             _bridgeAddress,

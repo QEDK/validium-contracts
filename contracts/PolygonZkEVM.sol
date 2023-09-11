@@ -6,6 +6,7 @@ import "./interfaces/IVerifierRollup.sol";
 import "./interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IPolygonZkEVMBridge.sol";
+import "./lib/DAMerkle.sol";
 import "./lib/EmergencyManager.sol";
 import "./interfaces/IPolygonZkEVMErrors.sol";
 
@@ -19,6 +20,7 @@ import "./interfaces/IPolygonZkEVMErrors.sol";
  */
 contract PolygonZkEVM is
     OwnableUpgradeable,
+    DAMerkle,
     EmergencyManager,
     IPolygonZkEVMErrors
 {
@@ -26,7 +28,7 @@ contract PolygonZkEVM is
 
     /**
      * @notice Struct which will be used to call sequenceBatches
-     * @param transactions L2 ethereum transactions EIP-155 or pre-EIP-155 with signature:
+     * @param batchHash keccak hash of L2 ethereum transactions EIP-155 or pre-EIP-155 with signature:
      * EIP-155: rlp(nonce, gasprice, gasLimit, to, value, data, chainid, 0, 0,) || v || r || s
      * pre-EIP-155: rlp(nonce, gasprice, gasLimit, to, value, data) || v || r || s
      * @param globalExitRoot Global exit root of the batch
@@ -42,7 +44,7 @@ contract PolygonZkEVM is
 
     /**
      * @notice Struct which will be used to call sequenceForceBatches
-     * @param transactions L2 ethereum transactions EIP-155 or pre-EIP-155 with signature:
+     * @param batchHash keccakHash L2 ethereum transactions EIP-155 or pre-EIP-155 with signature:
      * EIP-155: rlp(nonce, gasprice, gasLimit, to, value, data, chainid, 0, 0,) || v || r || s
      * pre-EIP-155: rlp(nonce, gasprice, gasLimit, to, value, data) || v || r || s
      * @param globalExitRoot Global exit root of the batch
@@ -52,6 +54,13 @@ contract PolygonZkEVM is
         bytes32 batchHash;
         bytes32 globalExitRoot;
         uint64 minForcedTimestamp;
+    }
+
+    struct DAData {
+        uint32 blockNumber;
+        bytes32[] proof;
+        uint256 width;
+        uint256 index;
     }
 
     /**
@@ -103,24 +112,6 @@ contract PolygonZkEVM is
     // Modulus zkSNARK
     uint256 internal constant _RFIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
-
-    // Max transactions bytes that can be added in a single batch
-    // Max keccaks circuit = (2**23 / 155286) * 44 = 2376
-    // Bytes per keccak = 136
-    // Minimum Static keccaks batch = 2
-    // Max bytes allowed = (2376 - 2) * 136 = 322864 bytes - 1 byte padding
-    // Rounded to 300000 bytes
-    // In order to process the transaction, the data is approximately hashed twice for ecrecover:
-    // 300000 bytes / 2 = 150000 bytes
-    // Since geth pool currently only accepts at maximum 128kb transactions:
-    // https://github.com/ethereum/go-ethereum/blob/master/core/txpool/txpool.go#L54
-    // We will limit this length to be compliant with the geth restrictions since our node will use it
-    // We let 8kb as a sanity margin
-    uint256 internal constant _MAX_TRANSACTIONS_BYTE_LENGTH = 120000;
-
-    // Max force batch transaction length
-    // This is used to avoid huge calldata attacks, where the attacker call force batches from another contract
-    uint256 internal constant _MAX_FORCE_BATCH_BYTE_LENGTH = 5000;
 
     // If a sequenced batch exceeds this timeout without being verified, the contract enters in emergency mode
     uint64 internal constant _HALT_AGGREGATION_TIMEOUT = 1 weeks;
@@ -369,6 +360,7 @@ contract PolygonZkEVM is
 
     /**
      * @param _globalExitRootManager Global exit root manager address
+     * @param _dataAvailabilityRouter DA router address
      * @param _matic MATIC token address
      * @param _rollupVerifier Rollup verifier address
      * @param _bridgeAddress Bridge address
@@ -377,12 +369,13 @@ contract PolygonZkEVM is
      */
     constructor(
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
+        IDataAvailabilityRouter _dataAvailabilityRouter,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress,
         uint64 _chainID,
         uint64 _forkID
-    ) {
+    ) DAMerkle(_dataAvailabilityRouter) {
         globalExitRootManager = _globalExitRootManager;
         matic = _matic;
         rollupVerifier = _rollupVerifier;
@@ -483,6 +476,7 @@ contract PolygonZkEVM is
      */
     function sequenceBatches(
         BatchData[] calldata batches,
+        DAData[] calldata daData,
         address l2Coinbase
     ) external ifNotEmergencyState onlyTrustedSequencer {
         uint256 batchesNum = batches.length;
@@ -492,6 +486,13 @@ contract PolygonZkEVM is
 
         if (batchesNum > _MAX_VERIFY_BATCHES) {
             revert ExceedMaxVerifyBatches();
+        }
+
+        // this is slightly inefficient but avoids stack too deep and opening the batch unless the batch is attested
+        for (uint256 i = 0; i < batchesNum; i++) {
+            if (!_checkDataRootMembership(daData[i].blockNumber, daData[i].proof, daData[i].width, daData[i].index, batches[i].batchHash)) {
+                revert InvalidDAProof();
+            }
         }
 
         // Store storage variables in memory, to save gas, because will be overrided multiple times
@@ -1008,6 +1009,7 @@ contract PolygonZkEVM is
      */
     function forceBatch(
         bytes32 batchHash,
+        DAData calldata daData,
         uint256 maticAmount
     ) public isForceBatchAllowed ifNotEmergencyState {
         // Calculate matic collateral
@@ -1025,6 +1027,10 @@ contract PolygonZkEVM is
 
         // Update forcedBatches mapping
         lastForceBatch++;
+
+        if (!_checkDataRootMembership(daData.blockNumber, daData.proof, daData.width, daData.index, batchHash)) {
+            revert InvalidDAProof();
+        }
 
         forcedBatches[lastForceBatch] = keccak256(
             abi.encodePacked(
@@ -1054,7 +1060,8 @@ contract PolygonZkEVM is
      * @param batches Struct array which holds the necessary data to append force batches
      */
     function sequenceForceBatches(
-        ForcedBatchData[] calldata batches
+        ForcedBatchData[] calldata batches,
+        DAData[] calldata daData
     ) external isForceBatchAllowed ifNotEmergencyState {
         uint256 batchesNum = batches.length;
 
@@ -1087,6 +1094,10 @@ contract PolygonZkEVM is
 
             // Store the current transactions hash since it's used more than once for gas saving
             bytes32 currentTransactionsHash = currentBatch.batchHash;
+
+            if (!_checkDataRootMembership(daData[i].blockNumber, daData[i].proof, daData[i].width, daData[i].index, currentBatch.batchHash)) {
+                revert InvalidDAProof();
+            }
 
             // Check forced data matches
             bytes32 hashedForcedBatchData = keccak256(

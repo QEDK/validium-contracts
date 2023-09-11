@@ -19,14 +19,16 @@ contract PolygonZkEVMMock is PolygonZkEVM {
      */
     constructor(
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
+        IDataAvailabilityRouter _dataAvailabilityRouter,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress,
         uint64 _chainID,
         uint64 _forkID
-    )
+    ) 
         PolygonZkEVM(
             _globalExitRootManager,
+            _dataAvailabilityRouter,
             _matic,
             _rollupVerifier,
             _bridgeAddress,
