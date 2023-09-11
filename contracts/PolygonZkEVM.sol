@@ -34,7 +34,7 @@ contract PolygonZkEVM is
      * @param minForcedTimestamp Minimum timestamp of the force batch data, empty when non forced batch
      */
     struct BatchData {
-        bytes transactions;
+        bytes32 batchHash;
         bytes32 globalExitRoot;
         uint64 timestamp;
         uint64 minForcedTimestamp;
@@ -49,7 +49,7 @@ contract PolygonZkEVM is
      * @param minForcedTimestamp Indicates the minimum sequenced timestamp of the batch
      */
     struct ForcedBatchData {
-        bytes transactions;
+        bytes32 batchHash;
         bytes32 globalExitRoot;
         uint64 minForcedTimestamp;
     }
@@ -254,7 +254,7 @@ contract PolygonZkEVM is
         uint64 indexed forceBatchNum,
         bytes32 lastGlobalExitRoot,
         address sequencer,
-        bytes transactions
+        bytes32 batchHash
     );
 
     /**
@@ -509,9 +509,7 @@ contract PolygonZkEVM is
             BatchData memory currentBatch = batches[i];
 
             // Store the current transactions hash since can be used more than once for gas saving
-            bytes32 currentTransactionsHash = keccak256(
-                currentBatch.transactions
-            );
+            bytes32 currentTransactionsHash = currentBatch.batchHash;
 
             // Check if it's a forced batch
             if (currentBatch.minForcedTimestamp > 0) {
@@ -551,13 +549,6 @@ contract PolygonZkEVM is
                     0
                 ) {
                     revert GlobalExitRootNotExist();
-                }
-
-                if (
-                    currentBatch.transactions.length >
-                    _MAX_TRANSACTIONS_BYTE_LENGTH
-                ) {
-                    revert TransactionsLengthAboveMax();
                 }
             }
 
@@ -1012,11 +1003,11 @@ contract PolygonZkEVM is
      * Note The sequencer has certain degree of control on how non-forced and forced batches are ordered
      * In order to assure that users force transactions will be processed properly, user must not sign any other transaction
      * with the same nonce
-     * @param transactions L2 ethereum transactions EIP-155 or pre-EIP-155 with signature:
+     * @param batchHash keccak hash of L2 ethereum transactions EIP-155 or pre-EIP-155 with signature
      * @param maticAmount Max amount of MATIC tokens that the sender is willing to pay
      */
     function forceBatch(
-        bytes calldata transactions,
+        bytes32 batchHash,
         uint256 maticAmount
     ) public isForceBatchAllowed ifNotEmergencyState {
         // Calculate matic collateral
@@ -1024,10 +1015,6 @@ contract PolygonZkEVM is
 
         if (maticFee > maticAmount) {
             revert NotEnoughMaticAmount();
-        }
-
-        if (transactions.length > _MAX_FORCE_BATCH_BYTE_LENGTH) {
-            revert TransactionsLengthAboveMax();
         }
 
         matic.safeTransferFrom(msg.sender, address(this), maticFee);
@@ -1041,7 +1028,7 @@ contract PolygonZkEVM is
 
         forcedBatches[lastForceBatch] = keccak256(
             abi.encodePacked(
-                keccak256(transactions),
+                batchHash,
                 lastGlobalExitRoot,
                 uint64(block.timestamp)
             )
@@ -1057,7 +1044,7 @@ contract PolygonZkEVM is
                 lastForceBatch,
                 lastGlobalExitRoot,
                 msg.sender,
-                transactions
+                batchHash
             );
         }
     }
@@ -1099,9 +1086,7 @@ contract PolygonZkEVM is
             currentLastForceBatchSequenced++;
 
             // Store the current transactions hash since it's used more than once for gas saving
-            bytes32 currentTransactionsHash = keccak256(
-                currentBatch.transactions
-            );
+            bytes32 currentTransactionsHash = currentBatch.batchHash;
 
             // Check forced data matches
             bytes32 hashedForcedBatchData = keccak256(
