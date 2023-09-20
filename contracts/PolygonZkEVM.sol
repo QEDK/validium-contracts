@@ -51,7 +51,7 @@ contract PolygonZkEVM is
      * @param minForcedTimestamp Indicates the minimum sequenced timestamp of the batch
      */
     struct ForcedBatchData {
-        bytes32 batchHash;
+        bytes transactions;
         bytes32 globalExitRoot;
         uint64 minForcedTimestamp;
     }
@@ -245,7 +245,7 @@ contract PolygonZkEVM is
         uint64 indexed forceBatchNum,
         bytes32 lastGlobalExitRoot,
         address sequencer,
-        bytes32 batchHash
+        bytes transactions
     );
 
     /**
@@ -1002,12 +1002,11 @@ contract PolygonZkEVM is
      * Note The sequencer has certain degree of control on how non-forced and forced batches are ordered
      * In order to assure that users force transactions will be processed properly, user must not sign any other transaction
      * with the same nonce
-     * @param batchHash keccak hash of L2 ethereum transactions EIP-155 or pre-EIP-155 with signature
+     * @param transactions L2 ethereum transactions EIP-155 or pre-EIP-155 with signature
      * @param maticAmount Max amount of MATIC tokens that the sender is willing to pay
      */
     function forceBatch(
-        bytes32 batchHash,
-        DAData calldata daData,
+        bytes calldata transactions,
         uint256 maticAmount
     ) public isForceBatchAllowed ifNotEmergencyState {
         // Calculate matic collateral
@@ -1026,11 +1025,9 @@ contract PolygonZkEVM is
         // Update forcedBatches mapping
         lastForceBatch++;
 
-        _checkDataRootMembership(daData.blockNumber, daData.proof, daData.width, daData.index, batchHash);
-
         forcedBatches[lastForceBatch] = keccak256(
             abi.encodePacked(
-                batchHash,
+                keccak256(transactions),
                 lastGlobalExitRoot,
                 uint64(block.timestamp)
             )
@@ -1046,7 +1043,7 @@ contract PolygonZkEVM is
                 lastForceBatch,
                 lastGlobalExitRoot,
                 msg.sender,
-                batchHash
+                transactions
             );
         }
     }
@@ -1056,8 +1053,7 @@ contract PolygonZkEVM is
      * @param batches Struct array which holds the necessary data to append force batches
      */
     function sequenceForceBatches(
-        ForcedBatchData[] calldata batches,
-        DAData[] calldata daData
+        ForcedBatchData[] calldata batches
     ) external isForceBatchAllowed ifNotEmergencyState {
         uint256 batchesNum = batches.length;
 
@@ -1089,9 +1085,7 @@ contract PolygonZkEVM is
             currentLastForceBatchSequenced++;
 
             // Store the current transactions hash since it's used more than once for gas saving
-            bytes32 currentTransactionsHash = currentBatch.batchHash;
-
-            _checkDataRootMembership(daData[i].blockNumber, daData[i].proof, daData[i].width, daData[i].index, currentBatch.batchHash);
+            bytes32 currentTransactionsHash = keccak256(currentBatch.transactions);
 
             // Check forced data matches
             bytes32 hashedForcedBatchData = keccak256(
