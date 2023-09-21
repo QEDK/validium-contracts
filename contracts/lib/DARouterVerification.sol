@@ -32,7 +32,7 @@ contract DARouterVerification is OwnableUpgradeable {
         uint256 width, // number of leaves
         uint256 index,
         bytes32 leaf
-    ) internal {
+    ) internal virtual {
         bytes32 rootHash = router.roots(blockNumber);
         // if root hash is 0, block does not have a root (yet)
         if (rootHash == bytes32(0)) {

@@ -349,7 +349,11 @@ async function main() {
     console.log('networkName:', networkName);
     console.log('forkID:', forkID);
 
-    const PolygonZkEVMFactory = await ethers.getContractFactory('PolygonZkEVM', deployer);
+    const MockDABridgeRouter = await ethers.getContractFactory('MockDABridgeRouter', deployer);
+    const mockDABridgeRouter = await MockDABridgeRouter.deploy();
+    await mockDABridgeRouter.deployed();
+
+    const PolygonZkEVMFactory = await ethers.getContractFactory('PolygonZkEVMMockDA', deployer);
 
     let polygonZkEVMContract;
     let deploymentBlockNumber;
@@ -374,6 +378,7 @@ async function main() {
                     {
                         constructorArgs: [
                             polygonZkEVMGlobalExitRoot.address,
+                            mockDABridgeRouter.address,
                             maticTokenAddress,
                             verifierContract.address,
                             polygonZkEVMBridgeContract.address,
