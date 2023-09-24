@@ -349,9 +349,9 @@ async function main() {
     console.log('networkName:', networkName);
     console.log('forkID:', forkID);
 
-    const MockDABridgeRouter = await ethers.getContractFactory('MockDABridgeRouter', deployer);
-    const mockDABridgeRouter = await MockDABridgeRouter.deploy();
-    await mockDABridgeRouter.deployed();
+    // const MockDABridgeRouter = await ethers.getContractFactory('MockDABridgeRouter', deployer);
+    // const mockDABridgeRouter = await MockDABridgeRouter.deploy();
+    // await mockDABridgeRouter.deployed();
 
     const PolygonZkEVMFactory = await ethers.getContractFactory('PolygonZkEVMMockDA', deployer);
 
