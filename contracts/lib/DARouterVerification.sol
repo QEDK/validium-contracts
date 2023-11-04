@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../interfaces/IDataAvailabilityRouter.sol";
@@ -16,13 +16,15 @@ contract DARouterVerification is OwnableUpgradeable {
     error BatchAlreadyPosted();
     error InvalidDAProof();
 
-    constructor(IDataAvailabilityRouter _router) {
-        router = _router;
-    }
-
     function setRouter(
         IDataAvailabilityRouter _router
-    ) external onlyOwner {
+    ) public onlyOwner {
+        _setRouter(_router);
+    }
+
+    function _setRouter(
+        IDataAvailabilityRouter _router
+    ) internal {
         router = _router;
     }
 
@@ -35,6 +37,9 @@ contract DARouterVerification is OwnableUpgradeable {
     ) internal virtual {
         bytes32 rootHash = router.roots(blockNumber);
         // if root hash is 0, block does not have a root (yet)
+        if (rootHash == bytes32(0) && leaf == bytes32(0)) {
+            return; // no data was posted
+        }
         if (rootHash == bytes32(0)) {
             revert DataRootNotFound();
         }

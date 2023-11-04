@@ -28,7 +28,7 @@ module.exports = {
     solidity: {
         compilers: [
             {
-                version: '0.8.20',
+                version: '0.8.22',
                 settings: {
                     optimizer: {
                         enabled: true,
@@ -93,6 +93,10 @@ module.exports = {
                 count: 20,
             },
         },
+        sepolia: {
+            url: process.env.SEPOLIA_PROVIDER ? process.env.SEPOLIA_PROVIDER : `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+            accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        },
         rinkeby: {
             url: process.env.RINKEBY_PROVIDER ? process.env.RINKEBY_PROVIDER : `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
             accounts: {
@@ -152,6 +156,7 @@ module.exports = {
             polygonZKEVMMainnet: `${process.env.ETHERSCAN_ZKEVM_API_KEY}`,
             goerli: `${process.env.ETHERSCAN_API_KEY}`,
             mainnet: `${process.env.ETHERSCAN_API_KEY}`,
+            sepolia: `${process.env.ETHERSCAN_API_KEY}`,
         },
         customChains: [
             {

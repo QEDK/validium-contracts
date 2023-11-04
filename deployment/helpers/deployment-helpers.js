@@ -13,7 +13,7 @@ async function deployPolygonZkEVMDeployer(deployerAddress, signer) {
     )).data;
 
     const gasLimit = ethers.BigNumber.from(1000000); // Put 1 Million, aprox 650k are necessary
-    const gasPrice = ethers.BigNumber.from(ethers.utils.parseUnits(gasPriceKeylessDeployment, 'gwei'));
+    const gasPrice = ethers.BigNumber.from(ethers.utils.parseUnits("150", 'gwei'));
     const to = '0x'; // bc deployment transaction, "to" is "0x"
     const tx = {
         to,
@@ -22,6 +22,7 @@ async function deployPolygonZkEVMDeployer(deployerAddress, signer) {
         gasLimit: gasLimit.toHexString(),
         gasPrice: gasPrice.toHexString(),
         data: deployTxZKEVMDeployer,
+        chainId: 11155111
     };
 
     const signature = {

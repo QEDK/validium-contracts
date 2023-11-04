@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity 0.8.20;
+pragma solidity ^0.8.22;
 
 import "../PolygonZkEVM.sol";
 
@@ -20,7 +20,6 @@ contract PolygonZkEVMTestnetClearStorage is PolygonZkEVM {
      */
     constructor(
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
-        IDataAvailabilityRouter _dataAvailabilityRouter,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress,
@@ -29,7 +28,6 @@ contract PolygonZkEVMTestnetClearStorage is PolygonZkEVM {
     ) 
         PolygonZkEVM(
             _globalExitRootManager,
-            _dataAvailabilityRouter,
             _matic,
             _rollupVerifier,
             _bridgeAddress,

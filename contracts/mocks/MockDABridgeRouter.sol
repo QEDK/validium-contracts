@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity ^0.8.22;
 
 contract MockDABridgeRouter {
     mapping(uint32 => bytes32) public roots;

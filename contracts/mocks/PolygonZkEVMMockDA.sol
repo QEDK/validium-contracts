@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity 0.8.20;
+pragma solidity ^0.8.22;
 
 import "../PolygonZkEVM.sol";
 
 contract PolygonZkEVMMockDA is PolygonZkEVM {
     /**
      * @param _globalExitRootManager Global exit root manager address
-     * @param _dataAvailabilityRouter DA router address
      * @param _matic MATIC token address
      * @param _rollupVerifier Rollup verifier address
      * @param _bridgeAddress Bridge address
@@ -15,7 +14,6 @@ contract PolygonZkEVMMockDA is PolygonZkEVM {
      */
     constructor(
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
-        IDataAvailabilityRouter _dataAvailabilityRouter,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress,
@@ -23,7 +21,6 @@ contract PolygonZkEVMMockDA is PolygonZkEVM {
         uint64 _forkID
     )  PolygonZkEVM(
             _globalExitRootManager,
-            _dataAvailabilityRouter,
             _matic,
             _rollupVerifier,
             _bridgeAddress,

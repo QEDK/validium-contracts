@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Modified from https://github.com/QEDK/solidity-misc/blob/master/contracts/Merkle.sol
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.22;
 
 library Merkle {
     function checkMembership(

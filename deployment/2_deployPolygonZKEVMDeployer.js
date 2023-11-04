@@ -15,7 +15,11 @@ async function main() {
     let currentProvider = ethers.provider;
     if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
         if (process.env.HARDHAT_NETWORK !== 'hardhat') {
-            currentProvider = new ethers.providers.JsonRpcProvider(`https://${process.env.HARDHAT_NETWORK}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`);
+            if (process.env.HARDHAT_NETWORK === 'sepolia') {
+                currentProvider = new ethers.providers.JsonRpcProvider(process.env.SEPOLIA_PROVIDER);
+            } else {
+                currentProvider = new ethers.providers.JsonRpcProvider(`https://${process.env.HARDHAT_NETWORK}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`);
+            }
             if (deployParameters.maxPriorityFeePerGas && deployParameters.maxFeePerGas) {
                 console.log(`Hardcoded gas used: MaxPriority${deployParameters.maxPriorityFeePerGas} gwei, MaxFee${deployParameters.maxFeePerGas} gwei`);
                 const FEE_DATA = {

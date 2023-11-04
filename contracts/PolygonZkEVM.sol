@@ -107,6 +107,7 @@ contract PolygonZkEVM is
         uint64 pendingStateTimeout;
         address trustedAggregator;
         uint64 trustedAggregatorTimeout;
+        address daBridgeRouter;
     }
 
     // Modulus zkSNARK
@@ -360,7 +361,6 @@ contract PolygonZkEVM is
 
     /**
      * @param _globalExitRootManager Global exit root manager address
-     * @param _dataAvailabilityRouter DA router address
      * @param _matic MATIC token address
      * @param _rollupVerifier Rollup verifier address
      * @param _bridgeAddress Bridge address
@@ -369,13 +369,12 @@ contract PolygonZkEVM is
      */
     constructor(
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
-        IDataAvailabilityRouter _dataAvailabilityRouter,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress,
         uint64 _chainID,
         uint64 _forkID
-    ) DARouterVerification(_dataAvailabilityRouter) {
+    ) {
         globalExitRootManager = _globalExitRootManager;
         matic = _matic;
         rollupVerifier = _rollupVerifier;
@@ -403,6 +402,7 @@ contract PolygonZkEVM is
         batchNumToStateRoot[0] = genesisRoot;
         trustedSequencerURL = _trustedSequencerURL;
         networkName = _networkName;
+        _setRouter(IDataAvailabilityRouter(initializePackedParameters.daBridgeRouter));
 
         // Check initialize parameters
         if (
