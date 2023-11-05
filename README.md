@@ -1,6 +1,6 @@
-# zkevm-contracts
+# Validium Contracts
 
-Smart contract implementation which will be used by the polygon-hermez zkevm
+Smart contract implementation which will be used by the Avail Validium-based networks
 
 [![Main CI](https://github.com/0xPolygonHermez/zkevm-contracts/actions/workflows/main.yml/badge.svg)](https://github.com/0xPolygonHermez/zkevm-contracts/actions/workflows/main.yml)
 
@@ -88,4 +88,4 @@ To verify that the smartcontracts of this repository are the same deployed on ma
 The smartcontract used to verify a proof, it's a generated contract from zkEVM Rom and Pil (constraints). To verify the deployment of this smartcontract you could follow the instructions described in this [document](verifyMainnetDeployment/verifyMainnetProofVerifier.md)
 
 ## License
-All contracts except for `DARouterVerification.sol`, `MockDABridgeRouter.sol`, `MockDABridgeRouter.sol` and `Merkle.sol` are released under AGPL v3 (see [LICENSE](LICENSE.md)). The excepted contracts are released under Apache v2.
+All contracts except for `DARouterVerification.sol`, `MockDABridgeRouter.sol`, `MockDABridgeRouter.sol` and `Merkle.sol` are released under AGPL v3 (see [LICENSE](LICENSE)). The excepted contracts are released under Apache v2.
